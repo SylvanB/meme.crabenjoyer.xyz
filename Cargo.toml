@@ -1,0 +1,18 @@
+[package]
+name = "meme-host"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.7.5", features = ["multipart"] }
+axum-extra = "0.9.3"
+dotenvy = "0.15.7"
+md-5 = "0.10.6"
+object_store = { version = "0.10.2", features = ["aws"] }
+sha2 = "0.10.8"
+
+tokio = { version = "1.0", features = ["full"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5.0", features = ["fs", "limit", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

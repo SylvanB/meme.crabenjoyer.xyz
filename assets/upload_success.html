@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>crabenjoyer.xyz</title>
+
+        <link rel="stylesheet" href="style.css">
+    </head>
+
+    <body>
+        <p>.: meme.crabenjoyer.xyz :.</p>
+        <p>Upload completed. Your meme will be available at <a id="memeUrl">here</a>.</p>
+        <script>
+        const params = new URL(document.location.toString()).searchParams;
+        const memeId = params.get("memeId");
+        const source = document.getElementById("memeUrl");
+        source.href = "https://meme.crabenjoyer.xyz/meme" + memeId;
+        </script>
+    </body>
+</html>

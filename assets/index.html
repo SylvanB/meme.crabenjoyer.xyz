@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>crabenjoyer.xyz</title>
+
+        <link rel="stylesheet" href="style.css">
+    </head>
+
+    <body>
+        <p>.: meme.crabenjoyer.xyz :.</p>
+        <p>for all your meme storage needs.</p>
+        <p><tt>GET /meme/</tt> Get a list of all memes</p>
+        <p><tt>DELETE /meme/&ltid&gt</tt> Get a list of all memes</p>
+        <p><tt>PUT /meme</tt> Upload a meme. Returns the <tt>&ltid&gt</tt> of the meme</p>
+
+        <form action="/meme" method="post" enctype="multipart/form-data">
+            <label>
+                Upload file:
+                <input type="file" name="file" multiple>
+            </label>
+
+            <input type="submit" value="Upload files">
+        </form>
+
+        <script src="script.js"></script>
+    </body>
+</html>
