@@ -15,6 +15,11 @@ RUN cargo build --release --bin meme-host
 
 # We do not need the Rust toolchain to run the binary!
 FROM debian:bookworm-slim AS runtime
-WORKDIR /app
-COPY --from=builder /app/target/release/meme-host /usr/local/bin
-ENTRYPOINT ["/usr/local/bin/meme-host"]
+ARG APP=/user/local/bin
+
+WORKDIR $APP
+
+COPY --from=builder /app/target/release/meme-host $APP/meme-host
+COPY --from=builder /app/assets $APP/assets
+
+ENTRYPOINT ["./meme-host"]

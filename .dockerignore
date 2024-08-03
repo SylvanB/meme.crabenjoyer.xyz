@@ -1,2 +1,4 @@
 fly.toml
 .git/
+.env
+assets/privacy_policy.html

@@ -7,15 +7,21 @@
 
         <link rel="stylesheet" href="style.css">
     </head>
-
     <body>
-        <p>.: meme.crabenjoyer.xyz :.</p>
-        <p>Upload completed. Your meme will be available at <a id="memeUrl">here</a>.</p>
-        <script>
-        const params = new URL(document.location.toString()).searchParams;
-        const memeId = params.get("memeId");
-        const source = document.getElementById("memeUrl");
-        source.href = "https://meme.crabenjoyer.xyz/meme" + memeId;
-        </script>
+        <header class="header">
+            <h1>.: meme.crabenjoyer.xyz :.</h1>
+        </header>
+        <main class="main-content">
+            <section class="content">
+                <p>Upload completed. The links for your memes:</p>
+                {%- for item in upload_urls %}
+                <p><a href="{{ item }}">{{ item }}</a><p/>
+                {%- endfor %}
+            </section>
+        </main>
+        <footer class="footer">
+            <p>Copyright sylvie 2024</p>
+            <!-- <p><a href="/privacy_policy.html">Privacy Policy</a></p> -->
+        </footer>
     </body>
 </html>
