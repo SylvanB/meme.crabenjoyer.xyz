@@ -6,6 +6,7 @@
         <title>crabenjoyer.xyz ayy</title>
 
         <link rel="stylesheet" href="style.css">
+
     </head>
 
     <body>
@@ -24,7 +25,12 @@
                     <tr>
                         <td>GET</td>
                         <td>/meme</td>
-                        <td>Get a list of all memes</td>
+                        <td>Get a list of recently uploaded memes</td>
+                    </tr>
+                    <tr>
+                        <td>GET</td>
+                        <td>/meme/<id></td>
+                        <td>Get a given meme</td>
                     </tr>
                     <tr>
                         <td>DELETE</td>
@@ -32,7 +38,7 @@
                         <td>Delete a meme</td>
                     </tr>
                     <tr>
-                        <td>PUT</td>
+                        <td>POST</td>
                         <td>/meme</td>
                         <td>Upload a meme. Returns the  <tt>&ltid&gt</tt> of the meme</td>
                     </tr>
@@ -45,12 +51,30 @@
                     </label>
                     <input type="submit" value="Upload files">
                 </form>
+                <div id="recentMemes">
+                    <p>Recent Memes:</p>
+                </div>
             </section>
         </main>
         <footer class="footer">
             <p>Copyright sylvie 2024</p>>
             <!-- <a href="/privacy_policy.html">Privacy Policy</a> -->
         </footer>
+
         <script src="script.js"></script>
+        <script async>
+          document.addEventListener("DOMContentLoaded", async () => {
+            const memeUrls = await getRecentMemes();
+            let recentMemesEle = document.getElementById("recentMemes");
+            for (const url of memeUrls) {
+              const p = document.createElement("p");
+              const a = document.createElement("a");
+              a.setAttribute("href", url);
+              a.innerText = url;
+              p.appendChild(a);
+              recentMemesEle.appendChild(p);
+            }
+          });
+        </script>
     </body>
 </html>

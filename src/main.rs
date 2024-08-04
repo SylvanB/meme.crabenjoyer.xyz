@@ -1,18 +1,24 @@
+mod crypto;
+mod objects;
+
 use axum::{
     body::Body,
     extract::{DefaultBodyLimit, Multipart, Path, State},
     http::{HeaderMap, Response, StatusCode},
     response::IntoResponse,
     routing::{get, post},
-    Router,
+    Json, Router,
 };
+use chrono::{Duration, Utc};
+use crypto::{get_truncated_sha256, HashOutputSize};
+use futures::stream::StreamExt;
 use minijinja::render;
 use object_store::{
     aws::{AmazonS3, AmazonS3Builder},
     path::Path as ObjStorePath,
     Attribute, Attributes, ObjectStore, PutOptions, PutPayload,
 };
-use sha2::{Digest, Sha256};
+use objects::get_urls_from_hashes;
 use std::{fs::File, io::Read, path::Path as StdPath, sync::Arc};
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::services::fs::ServeDir;
@@ -23,10 +29,7 @@ type ObjStore = Arc<AmazonS3>;
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    match dotenvy::dotenv() {
-        Ok(_) => {}
-        Err(_) => {}
-    }
+    _ = dotenvy::dotenv();
 
     let store = Arc::new(
         AmazonS3Builder::new()
@@ -42,11 +45,10 @@ async fn main() {
     let app = Router::new()
         .nest_service("/", ServeDir::new("assets"))
         .route("/meme", post(upload))
-        .route("/meme/:obj_hash", get(get_meme))
+        .route("/meme", get(get_recent_memes))
+        .route("/meme/:obj_hash", get(get_meme_by_id))
         .layer(DefaultBodyLimit::disable())
-        .layer(RequestBodyLimitLayer::new(
-            10 * 1024 * 1024, /* 250mb */
-        ))
+        .layer(RequestBodyLimitLayer::new(10 * 1024 * 1024 /* 10mb */))
         .with_state(store);
 
     // run our app with hyper, listening globally on port 3000
@@ -54,7 +56,32 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn get_meme(
+async fn get_recent_memes(State(store): State<ObjStore>) -> impl IntoResponse {
+    let object_stream = store.list(None);
+
+    let twelve_hours_ago = Utc::now() - Duration::hours(12);
+    let mut recent_objects = Vec::new();
+    let mut stream = object_stream;
+    while let Some(result) = stream.next().await {
+        match result {
+            Ok(meta) if meta.last_modified > twelve_hours_ago => recent_objects.push(meta),
+            Err(e) => eprintln!("Error fetching object metadata: {}", e),
+            _ => (),
+        }
+    }
+
+    dbg!(&recent_objects);
+
+    let hashes = recent_objects
+        .into_iter()
+        .map(|om| om.location.to_string())
+        .collect::<Vec<String>>();
+
+    let urls = get_urls_from_hashes(hashes);
+    Json(urls)
+}
+
+async fn get_meme_by_id(
     State(store): State<ObjStore>,
     Path(obj_hash): Path<String>,
 ) -> impl IntoResponse {
@@ -90,8 +117,8 @@ async fn upload(State(store): State<ObjStore>, mut multipart: Multipart) -> impl
         dbg!(&content_type);
         let data = field.bytes().await.unwrap();
 
-        let digest = Sha256::digest(&data);
-        let hash: String = digest.iter().map(|byte| format!("{:02x}", byte)).collect();
+        let hash = get_truncated_sha256(&data, HashOutputSize::Short32);
+        dbg!(&hash);
 
         let mut attributes = Attributes::new();
         attributes.insert(Attribute::Metadata("filename".into()), filename.into());
@@ -114,11 +141,7 @@ async fn upload(State(store): State<ObjStore>, mut multipart: Multipart) -> impl
         hashes.push(hash.clone());
     }
 
-    let base_url = dotenvy::var("BASE_SITE_URL").unwrap();
-    let mut urls = Vec::new();
-    for hash in hashes {
-        urls.push(format!("{0}/meme/{1}", base_url, &hash));
-    }
+    let urls = get_urls_from_hashes(hashes);
 
     let file_path = format!(
         "{}/upload_success.html",
