@@ -13,7 +13,7 @@ use object_store::{
     Attribute, Attributes, ObjectStore, PutOptions, PutPayload,
 };
 use sha2::{Digest, Sha256};
-use std::{borrow::Cow, fs::File, io::Read, path::Path as StdPath, sync::Arc};
+use std::{fs::File, io::Read, path::Path as StdPath, sync::Arc};
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::services::fs::ServeDir;
 
@@ -62,31 +62,43 @@ async fn get_meme(
     dbg!(&resp);
 
     let attributes = resp.attributes.clone();
+
     let filename = attributes
         .get(&Attribute::Metadata("filename".into()))
         .unwrap();
     let content_disposition = format!("attachment; filename=\"{}\"", filename.to_string());
     dbg!(&content_disposition);
 
+    let content_type = attributes
+        .get(&Attribute::Metadata("content_type".into()))
+        .unwrap();
+    let content_type = content_type.to_string();
+    dbg!(&content_type);
+
     let data = resp.bytes().await.unwrap();
 
     let mut headers = HeaderMap::new();
-    headers.insert("Content-Type", "application/octet-stream".parse().unwrap());
-    headers.insert("Content-Disposition", content_disposition.parse().unwrap());
+    headers.insert("Content-Type", content_type.parse().unwrap());
     (StatusCode::OK, headers, data)
 }
 
 async fn upload(State(store): State<ObjStore>, mut multipart: Multipart) -> impl IntoResponse {
     let mut hashes = Vec::new();
     while let Some(field) = multipart.next_field().await.unwrap() {
-        let name = field.file_name().unwrap().to_string();
+        let filename = field.file_name().unwrap().to_string();
+        let content_type = field.content_type().unwrap().to_string();
+        dbg!(&content_type);
         let data = field.bytes().await.unwrap();
 
         let digest = Sha256::digest(&data);
         let hash: String = digest.iter().map(|byte| format!("{:02x}", byte)).collect();
 
         let mut attributes = Attributes::new();
-        attributes.insert(Attribute::Metadata("filename".into()), name.into());
+        attributes.insert(Attribute::Metadata("filename".into()), filename.into());
+        attributes.insert(
+            Attribute::Metadata("content_type".into()),
+            content_type.into(),
+        );
 
         dbg!(&attributes);
 
