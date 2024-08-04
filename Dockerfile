@@ -22,4 +22,7 @@ WORKDIR $APP
 COPY --from=builder /app/target/release/meme-host $APP/meme-host
 COPY --from=builder /app/assets $APP/assets
 
+ENV STATIC_ASSETS=$APP/assets
+ENV BASE_SITE_URL=https://meme.crabenjoyer.xyz
+
 ENTRYPOINT ["./meme-host"]
